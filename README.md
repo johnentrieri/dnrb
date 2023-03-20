@@ -14,15 +14,17 @@ Navigate to cloned repository and install needed packages using [NodeJS/NPM](htt
 
 ## Setup
 
-In the root directory of the repository, copy the **TEMPLATE.env** file to a new file named **.env**
+1. In the root directory of the repository, copy the **TEMPLATE.env** file to a new file named **.env**
 
-Create a Discord application from the [Discord Developer Portal](https://discord.com/developers/applications) and use Bot Settings option to Build-A-Bot.
+2. Go to [Download FFmpeg](https://ffmpeg.org/download.html) to download *ffmpeg* and *ffprobe* binaries for your Windows/Linux distribution and place the items within the */tools/* directory.
 
-Copy the Application ID from the General Information tab and paste into the **.env** file replacing **DISCORD-APPLICATION-ID**
+3. Create a Discord application from the [Discord Developer Portal](https://discord.com/developers/applications) and use Bot Settings option to Build-A-Bot.
 
-Copy the generated Bot Token and paste into the **.env** file replacing **DISCORD-BOT-TOKEN**
+4. Copy the Application ID from the General Information tab and paste into the **.env** file replacing **DISCORD-APPLICATION-ID**
 
-*Development Only:* Open up the Discord Client (ensure Developer Mode is enabled), right click the server that the application will be registered for, Copy ID and paste into  the **.env** file replacing **DISCORD-CHANNEL-ID**
+5. Copy the generated Bot Token and paste into the **.env** file replacing **DISCORD-BOT-TOKEN**
+
+6. *Development Only:* Open up the Discord Client (ensure Developer Mode is enabled), right click the server that the application will be registered for, Copy ID and paste into  the **.env** file replacing **DISCORD-CHANNEL-ID**
 
 ## Deploying Commands
 
