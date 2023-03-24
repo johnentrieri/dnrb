@@ -1,6 +1,6 @@
 # Definitely Not Rhythm Bot (DNRB)
 
-A discord bot that joins your channel and plays audio from YouTube on request.
+A discord bot that joins your channel and plays audio on request.
 
 # Installation
 
@@ -16,7 +16,7 @@ Navigate to cloned repository and install needed packages using [NodeJS/NPM](htt
 
 1. In the root directory of the repository, copy the **TEMPLATE.env** file to a new file named **.env**
 
-2. Go to [Download FFmpeg](https://ffmpeg.org/download.html) to download *ffmpeg* and *ffprobe* binaries for your Windows/Linux distribution and place the items within the */tools/* directory.
+2. Go to [Download FFmpeg](https://ffmpeg.org/download.html) to download *ffmpeg (full)* binaries for your Windows/Linux distribution and ensure the binaries are [added to the PATH environment variable](https://www.java.com/en/download/help/path.html).
 
 3. Create a Discord application from the [Discord Developer Portal](https://discord.com/developers/applications) and use Bot Settings option to Build-A-Bot.
 
@@ -32,7 +32,7 @@ All commands within the /commands/ directory can be deployed to the development 
 
     node deploy-commands.js
     
-This must be re-run whenever commands are added/removed.
+This must be re-run whenever new commands are added/removed.
 
 Arguments to applicationGuildCommands() function can be modified to either deploy commands to a specific Guild/Channel or to all Channels where the Bot is added - See [Discord.js Guide](https://discordjs.guide/creating-your-bot/command-deployment.html#command-registration)
 
@@ -45,9 +45,11 @@ To run the Bot, use the following command:
 
 ## Commands
 |Command         |Functionality/Response
-|----------------|-------------------------------|
-|`/ping`         |Bot replies with `PONG`        |
-|                |                               |
-|                |                               |
-|                |                               |
-|                |                               |
+|----------------|-----------------------------------------------------------------------------------------------------------------------|
+|`/ping`         |Replies with "Pong" *([Discord.js Guide](https://discordjs.guide/creating-your-bot/slash-commands.html))*              |
+|`/user`         |Replies with User information *([Discord.js Guide](https://discordjs.guide/creating-your-bot/slash-commands.html))*    |
+|`/server`       |Replies with Server information *([Discord.js Guide](https://discordjs.guide/creating-your-bot/slash-commands.html))*  |
+|`/summon`       |Summons DNRB to the Voice Channel of the summoning User                                                                |
+|`/banish`       |Banishes DNRB from the Voice Channel of the summoning User                                                             |
+|`/carl`         |Summons DNRB to the summoning User's Voice Channel, Plays the test sound *carl.mp3*, and leaves the Channel            |
+|`/play [query]` |Searches for a song using keyword **query**, downloads the top result as an MP3 locally, and plays it on the Voice     |

@@ -1,11 +1,10 @@
 const { SlashCommandBuilder} = require('discord.js');
-const { joinVoiceChannel, createAudioPlayer, createAudioResource  } = require('@discordjs/voice');
-const { join } = require('node:path');
+const { joinVoiceChannel } = require('@discordjs/voice');
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('carl')
-		.setDescription('Plays a test recording'),
+		.setName('summon')
+		.setDescription('Summon the bot to the current voice channel'),
 	async execute(interaction) {
 
         // Create placeholder for ID of VoiceChannel that summoning user is in
@@ -42,31 +41,15 @@ module.exports = {
             return;
         }
 
-        // Join the VoiceChannel unmuted
-        const connection = await joinVoiceChannel({
+        // Join VoiceChannel unmuted
+        joinVoiceChannel({
             channelId: summonerChannelID,
             guildId: interaction.guildId,
             adapterCreator: interaction.guild.voiceAdapterCreator,
             selfMute: false
         });
-
-        // Create an AudioPlayer
-        const player = await createAudioPlayer();
-
-        // Subscribe the VoiceConnection to the AudioPlayer
-        await connection.subscribe(player);
-
-        // Create an AudioResource from carl.mp3 in root (parent) directory
-        const resource = await createAudioResource(join(__dirname,'..','carl.mp3'));
-
-        // Play the AudioResource
-        player.play(resource);
-        player.on('error', error => { console.error('Error:', error.message); });
-
-        // Destroy connection after a few seconds
-        setTimeout(() => { connection.destroy(); }, 4000);
-
-        // Reply to command
-        interaction.reply("It don't matter, none of this matters...");  
-	}
+            
+        // Say Hi
+        interaction.reply("Hello!");     
+	},
 };
