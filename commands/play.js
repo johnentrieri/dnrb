@@ -1,10 +1,13 @@
 const { SlashCommandBuilder} = require('discord.js');
-const { getVoiceConnection, createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
+const { getVoiceConnection, createAudioPlayer, createAudioResource, AudioPlayerStatus, joinVoiceChannel } = require('@discordjs/voice');
 const {youtube} = require('@googleapis/youtube');
 const youtubedl = require('youtube-dl-exec')
 const { join } = require('node:path');
 
 const resourceQueue = [];
+let emptyQueue = true;
+let audioPlayer = null;
+let connection = null;
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -26,21 +29,103 @@ module.exports = {
         
         // Save input query string
         const query = interaction.options.getString('query');
+        console.log("[PLAY] Received Search Query: " + query);
         
-        // Find the connection
-        const connection = await getVoiceConnection(interaction.guildId);
-        
-        // Exit if bot is not part of a VoiceChannel
+        // Find the connection or join VoiceChannel if connection does not exist
+        connection = null;
+        connection = await getVoiceConnection(interaction.guildId);
         if (!connection) { 
-            interaction.editReply("I'm not currently in a Voice Channel"); 
-            return;
+
+            console.log("[PLAY] No Active VoiceConnection, attempting to join VoiceChannel");
+
+            // Create placeholder for ID of VoiceChannel that summoning user is in
+            let summonerChannelID = null;
+
+            // Get ID of summoning user
+            const summonerID = interaction.user.id;
+
+            // Fetch list of channels within the guild
+            const channels = await interaction.guild.channels.fetch();
+
+            // Loop through each channel to find Voice Channel where summoner is
+            channels.forEach( (channel) => {
+                if (channel.isVoiceBased()) {
+                    channel.members.forEach( (member) => {
+                        if (member.id == summonerID) {
+                            summonerChannelID = channel.id;
+                        };
+                    })
+                }
+            })
+
+            // Exit if summoning user is not in a VoiceChannel
+            if (!summonerChannelID) { 
+                console.log("[PLAY] Could not find summoner in a VoiceChannel");
+                interaction.editReply("You must be in a Voice Channel to summon me!"); 
+                return;
+            }
+
+            // Join VoiceChannel unmuted
+            console.log("[PLAY] Found Summoner, joining VoiceChannel ");
+            connection = await joinVoiceChannel({
+                channelId: summonerChannelID,
+                guildId: interaction.guildId,
+                adapterCreator: interaction.guild.voiceAdapterCreator,
+                selfMute: false
+            });
+
+
         }
 
-        // Create an AudioPlayer
-        const audioPlayer = await createAudioPlayer();
+        // Check if AudioPlayer already exists
+        if (audioPlayer) {
+            console.log("[PLAY] AudioPlayer Exists");
+        } else {
 
-        // Subscribe the VoiceConnection to the AudioPlayer
-        await connection.subscribe(audioPlayer);
+            // Create an AudioPlayer
+            console.log("[PLAY] AudioPlayer Does Not Exist, Creating & Subscribing");
+            audioPlayer = await createAudioPlayer();
+
+            // Subscribe the VoiceConnection to the AudioPlayer
+            connection.subscribe(audioPlayer);
+
+            // AudioPlayer Error Handling
+            audioPlayer.on('error', error => {
+                console.log("[PLAY] Exiting, Error Received: " + error)
+                connection.destroy();
+                return;                
+            });
+
+            // AudioPlayer - On Idle
+            audioPlayer.on(AudioPlayerStatus.Idle, () => {
+                console.log("[PLAY] AudioPlayer Entering Idle State")
+                if (resourceQueue.length <= 0) {
+                    emptyQueue = true;
+                    console.log("[PLAY] Queue Empty, Waiting for Request")
+                } else {
+                    const audioResource = resourceQueue.shift();
+                    audioPlayer.play(audioResource);
+                }
+                return;               
+            });
+
+            // AudioPlayer - On Playing
+            audioPlayer.on(AudioPlayerStatus.Playing, () => {
+                console.log("[PLAY] AudioPlayer Entering Playing State")
+                return;               
+            });
+
+            // AudioPlayer - On Queue Updated
+            audioPlayer.on('queue', () => {
+                console.log("[PLAY] New Resource Added to Queue")
+                if (resourceQueue.length > 0 && emptyQueue) {
+                    emptyQueue = false;
+                    const audioResource = resourceQueue.shift();
+                    audioPlayer.play(audioResource);
+                }
+                return;               
+            });
+        }
 
         // Get YouTube API Key from .env file
         require('dotenv').config();
@@ -52,9 +137,15 @@ module.exports = {
         // Search YouTube using input query
         const searchResults = await ytClient.search.list({ part: 'id', q: query, type: 'video'});
 
+        if (!searchResults.data.items) {
+            console.log("[PLAY] Error Retrieving Search Results");
+            return;   
+        }
+
         // Construct YouTube URL
         const videoID = searchResults.data.items[0].id.videoId;
         const ytURL = 'https://www.youtube.com/watch?v=' + videoID;
+        console.log("[PLAY] URL of First Search Result: " + ytURL);
 
         // Download YouTube Audio as an MP3
         await youtubedl(ytURL, {
@@ -70,27 +161,12 @@ module.exports = {
             ]
         });
 
-        // Create an AudioResource from MP3 file in audio directory
+        // Create and Queue AudioResource from MP3 file in audio directory
         const audioResource = await createAudioResource(join(__dirname,'..','audio', videoID + '.mp3'));
-
-        // TODO - Queue the AudioResource
-        /*
         resourceQueue.push(audioResource);
-        console.log(resourceQueue.length);
-
-        if ( resourceQueue.length <= 0) {
-            interaction.editReply("Queue is Empty"); 
-            return;
-        }
-
-        player.on(AudioPlayerStatus.Idle, () => {
-            player.play(getNextResource());
-        });
-        */
-
-        audioPlayer.play(audioResource);
-        audioPlayer.on('error', error => { console.error('Error:', error.message); });
+        audioPlayer.emit('queue');
+        console.log("[PLAY] Added to Queue, Queue Length is: " + resourceQueue.length);
        
-        interaction.editReply("Playing " + query );
+        interaction.editReply("Added " + ytURL + " to queue");
 	},
 };
