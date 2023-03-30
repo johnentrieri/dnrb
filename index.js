@@ -1,15 +1,17 @@
 // Require the necessary discord.js classes
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
+const fs = require('node:fs');
+const path = require('node:path');
+const sqlite3 = require('sqlite3');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
 
+// Empty collection for all SlashCommands
 client.commands = new Collection();
 
 // Grab all files within ./commands that end in .js
 // readdirSync is synchronous and returns an array of filenames
-const fs = require('node:fs');
-const path = require('node:path');
 const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
@@ -24,8 +26,17 @@ for (const file of commandFiles) {
 	}
 }
 
+// Grab discord bot token from TOKEN environment variable
 require('dotenv').config();
 const token = process.env.TOKEN;
+
+
+// SQLite3 DB Connection or Creation if it does not exist
+const dbPath = path.join(__dirname,'db','dnrb.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    console.log('Error connecting to (or creating) SQLite3 database');
+    return;
+})
 
 // When the client is ready, run this code (only once)
 // We use 'c' for the event parameter to keep it separate from the already defined 'client'

@@ -9,7 +9,7 @@ node_modules/
 .env.local
 
 # Downloaded audio files
-audio/
+audio/*
 
-# Tools Directory
-tools/
+# Database File
+db/dnrb.db
